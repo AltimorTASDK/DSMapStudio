@@ -678,9 +678,9 @@ namespace StudioCore
             }
             return ad;
         }
-        private string GetGameIDForDir()
+        private string GetGameIDForDir(GameType type)
         {
-            switch (Type)
+            switch (type)
             {
                 case GameType.DemonsSouls:
                     return "DES";
@@ -704,11 +704,13 @@ namespace StudioCore
                     throw new Exception("Game type not set");
             }
         }
+
+        private string GetGameIDForDir() => GetGameIDForDir(Type);
+
     	public string GetAliasAssetsDir()
         {
             return  $@"Assets\Aliases\{GetGameIDForDir()}";
         }
-
 
     	public string GetScriptAssetsCommonDir()
         {
@@ -729,15 +731,19 @@ namespace StudioCore
             return  $@"Assets\GameOffsets\{GetGameIDForDir()}";
         }
 
-        public string GetParamAssetsDir()
+        public string GetParamAssetsDir(GameType type)
         {
-            return  $@"Assets\Paramdex\{GetGameIDForDir()}";
+            return  $@"Assets\Paramdex\{GetGameIDForDir(type)}";
         }
 
-        public string GetParamdefDir()
+        public string GetParamAssetsDir() => GetParamAssetsDir(Type);
+
+        public string GetParamdefDir(GameType type)
         {
-            return $@"{GetParamAssetsDir()}\Defs";
+            return $@"{GetParamAssetsDir(type)}\Defs";
         }
+
+        public string GetParamdefDir() => GetParamdefDir(Type);
 
         public string GetTentativeParamTypePath()
         {
@@ -1174,6 +1180,11 @@ namespace StudioCore
 
                 if (Type == GameType.DarkSoulsRemastered)
                 {
+                    var t9999 = new AssetDescription();
+                    t9999.AssetPath = GetAssetPath($@"map\{mid}\{mid}_9999.tpf.dcx");
+                    t9999.AssetVirtualPath = $@"map/tex/{mid}/9999";
+                    ads.Add(t9999);
+
                     var env = new AssetDescription();
                     env.AssetPath = GetAssetPath($@"map\{mid}\GI_EnvM_{mid}.tpfbhd");
                     env.AssetArchiveVirtualPath = $@"map/tex/{mid}/env";
@@ -1239,7 +1250,7 @@ namespace StudioCore
             else if (Type is GameType.DarkSoulsRemastered)
             {
                 // TODO: Some textures require getting chrtpfbhd from chrbnd, then using it with chrtpfbdt in chr folder.
-                return GetOverridenFilePath($@"chr\{chrid}.chrbnd");
+                return GetOverridenFilePath($@"chr\{chrid}.chrbnd.dcx");
             }
             else if (Type is GameType.Bloodborne)
             {
@@ -1809,6 +1820,10 @@ namespace StudioCore
                                 return GetAssetPath($@"map\{mid}\GI_EnvM_{mid}.tpf.dcx");
                             }
                             return GetAssetPath($@"map\{mid}\{mid}_envmap.tpf.dcx");
+                        }
+                        if (Type == GameType.DarkSoulsRemastered && pathElements[i] == "9999")
+                        {
+                            return GetAssetPath($@"map\{mid}\{mid}_9999.tpf.dcx");
                         }
                         return GetAssetPath($@"map\{mid}\{mid}_{pathElements[i]}.tpfbhd");
                     }
