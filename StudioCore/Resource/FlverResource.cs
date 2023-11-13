@@ -112,6 +112,7 @@ namespace StudioCore.Resource
                 ShininessTextureResource,
                 ShininessTextureResource2,
                 BlendmaskTextureResource,
+                LightmapTextureResource,
                 TextureResourceCount,
             }
 
@@ -185,6 +186,7 @@ namespace StudioCore.Resource
                 SetMaterialTexture(TextureType.ShininessTextureResource, ref MaterialData.shininessTex, 2);
                 SetMaterialTexture(TextureType.ShininessTextureResource2, ref MaterialData.shininessTex2, 2);
                 SetMaterialTexture(TextureType.BlendmaskTextureResource, ref MaterialData.blendMaskTex, 0);
+                SetMaterialTexture(TextureType.LightmapTextureResource, ref MaterialData.lightmapTex, 0);
 
                 Scene.Renderer.AddBackgroundUploadTask((d, cl) =>
                 {
@@ -387,13 +389,14 @@ namespace StudioCore.Resource
         }
 
         private void ProcessMaterialTexture(FlverMaterial dest, string texType, string mpath, string mtd, GameType gameType,
-            out bool blend, out bool hasNormal2, out bool hasSpec2, out bool hasShininess2, out bool blendMask)
+            out bool blend, out bool hasNormal2, out bool hasSpec2, out bool hasShininess2, out bool blendMask, out bool lightmap)
         {
             blend = false;
             blendMask = false;
             hasNormal2 = false;
             hasSpec2 = false;
             hasShininess2 = false;
+            lightmap = false;
 
             string paramNameCheck;
             if (texType == null)
@@ -464,6 +467,11 @@ namespace StudioCore.Resource
                 LookupTexture(FlverMaterial.TextureType.BlendmaskTextureResource, dest, texType, mpath, mtd, gameType);
                 blendMask = true;
             }
+            else if (paramNameCheck == "G_LIGHTMAP")
+            {
+                LookupTexture(FlverMaterial.TextureType.LightmapTextureResource, dest, texType, mpath, mtd, gameType);
+                lightmap = true;
+            }
         }
 
         unsafe private void ProcessMaterial(IFlverMaterial mat, FlverMaterial dest, GameType type)
@@ -527,14 +535,20 @@ namespace StudioCore.Resource
             bool hasNormal2 = false;
             bool hasSpec2 = false;
             bool hasShininess2 = false;
+            bool lightmap = false;
 
             foreach (var matparam in mat.Textures)
             {
                 ProcessMaterialTexture(dest, matparam.Type, matparam.Path, mat.MTD, type,
-                    out blend, out hasNormal2, out hasSpec2, out hasShininess2, out blendMask);
+                    out blend, out hasNormal2, out hasSpec2, out hasShininess2, out blendMask, out lightmap);
             }
 
-            if (blendMask)
+            if (lightmap)
+            {
+                dest.ShaderName = @"FlverShader\FlverShader_lightmap";
+                dest.LayoutType = MeshLayoutType.LayoutUV2;
+            }
+            else if (blendMask)
             {
                 dest.ShaderName = @"FlverShader\FlverShader_blendmask";
                 dest.LayoutType = MeshLayoutType.LayoutUV2;
@@ -546,8 +560,10 @@ namespace StudioCore.Resource
             }
             else
             {
-                dest.ShaderName = @"FlverShader\FlverShader";
-                dest.LayoutType = MeshLayoutType.LayoutStandard;
+                //dest.ShaderName = @"FlverShader\FlverShader";
+                //dest.LayoutType = MeshLayoutType.LayoutStandard;
+                dest.ShaderName = @"FlverShader\FlverShader_lightmap";
+                dest.LayoutType = MeshLayoutType.LayoutUV2;
             }
 
             List<SpecializationConstant> specConstants = new List<SpecializationConstant>();
@@ -588,16 +604,22 @@ namespace StudioCore.Resource
             bool hasNormal2 = false;
             bool hasSpec2 = false;
             bool hasShininess2 = false;
+            bool lightmap = false;
 
             for (int i = mat.textureIndex; i < mat.textureIndex + mat.textureCount; i++)
             {
                 string ttype = isUTF ? br.GetUTF16(textures[i].typeOffset) : br.GetShiftJIS(textures[i].typeOffset);
                 string tpath = isUTF ? br.GetUTF16(textures[i].pathOffset) : br.GetShiftJIS(textures[i].pathOffset);
                 ProcessMaterialTexture(dest, ttype, tpath, mtd, type,
-                    out blend, out hasNormal2, out hasSpec2, out hasShininess2, out blendMask);
+                    out blend, out hasNormal2, out hasSpec2, out hasShininess2, out blendMask, out lightmap);
             }
 
-            if (blendMask)
+            if (lightmap)
+            {
+                dest.ShaderName = @"FlverShader\FlverShader_lightmap";
+                dest.LayoutType = MeshLayoutType.LayoutUV2;
+            }
+            else if (blendMask)
             {
                 dest.ShaderName = @"FlverShader\FlverShader_blendmask";
                 dest.LayoutType = MeshLayoutType.LayoutUV2;

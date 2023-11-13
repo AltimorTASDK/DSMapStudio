@@ -42,7 +42,7 @@ layout(location = 3) in ivec4 binormal;
 layout(location = 4) in ivec4 bitangent;
 layout(location = 5) in uvec4 color;
 
-#ifdef MATERIAL_BLEND
+#if defined(MATERIAL_BLEND) || defined(LIGHTMAP)
 	layout(location = 6) in ivec2 uv2;
 #endif
 
@@ -54,7 +54,7 @@ layout(location = 6) out vec4 fsin_bitangent;
 layout(location = 7) out vec4 fsin_color;
 layout(location = 8) out uint fsin_mat;
 layout(location = 9) out uint fsin_entityid;
-#ifdef MATERIAL_BLEND
+#if defined(MATERIAL_BLEND) || defined(LIGHTMAP)
 	layout(location = 10) out vec2 fsin_texcoord2;
 #endif
 
@@ -62,7 +62,7 @@ void main()
 {
 	mat4 w = idata[gl_InstanceIndex].world;
 	fsin_texcoord = vec2(uv) / 2048.0;
-#ifdef MATERIAL_BLEND
+#if defined(MATERIAL_BLEND) || defined(LIGHTMAP)
 	fsin_texcoord2 = vec2(uv2) / 2048.0;
 #endif
 	fsin_normal = normalize(mat3(w) * vec3(normal));
@@ -70,12 +70,12 @@ void main()
 	fsin_view = normalize(sceneparam.eye.xyz - (w * vec4(position, 1)).xyz);
 	fsin_mat = idata[gl_InstanceIndex].materialID.x;
 	fsin_entityid = idata[gl_InstanceIndex].materialID.w;
-	
+
 	vec3 T = normalize(mat3(w) * vec3(bitangent));
 	vec3 B = normalize(mat3(w) * vec3(binormal));
 	vec3 N = normalize(mat3(w) * vec3(normal));
 	fsin_worldToTangent = mat3(T, B, N);
-	
+
 	if (c_normalWBoneTransform)
 	{
 		gl_Position = sceneparam.projection * sceneparam.view * w *

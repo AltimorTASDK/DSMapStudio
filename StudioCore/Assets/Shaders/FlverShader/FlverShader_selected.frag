@@ -27,7 +27,7 @@ layout(location = 6) in vec4 fsin_bitangent;
 layout(location = 7) in vec4 fsin_color;
 layout(location = 8) flat in uint fsin_mat;
 layout(location = 9) flat in uint fsin_entityid;
-#ifdef MATERIAL_BLEND
+#if defined(MATERIAL_BLEND) || defined(LIGHTMAP)
 	layout(location = 10) in vec2 fsin_texcoord2;
 #endif
 
@@ -41,7 +41,7 @@ struct sceneParams
 	vec4 lightDirection;
 	ivec4 curserPosition;
 	uint envmap;
-	
+
 	float ambientLightMult;
 	float directLightMult;
 	float indirectLightMult;
