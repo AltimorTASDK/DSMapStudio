@@ -40,6 +40,7 @@ namespace StudioCore.ParamEditor
         /// Mapping from ParamType -> PARAMDEF.
         /// </summary>
         private static Dictionary<string, PARAMDEF> _paramdefs = null;
+        private static Dictionary<string, PARAMDEF> _paramdefsPTDE = null;
         /// <summary>
         /// Mapping from Param filename -> Manual ParamType.
         /// This is for params with no usable ParamType at some particular game version.
@@ -140,6 +141,15 @@ namespace StudioCore.ParamEditor
                 defPairs.Add((f, pdef));
             }
 
+            _paramdefsPTDE = new Dictionary<string, PARAMDEF>();
+            var dirPTDE = assetLocator.GetParamdefDir(GameType.DarkSoulsPTDE);
+            var filesPTDE = Directory.GetFiles(dirPTDE, "*.xml");
+            foreach (var f in filesPTDE)
+            {
+                var pdef = PARAMDEF.XmlDeserialize(f, true);
+                _paramdefsPTDE.Add(pdef.ParamType, pdef);
+            }
+
             var tentativeMappingPath = assetLocator.GetTentativeParamTypePath();
             if (File.Exists(tentativeMappingPath))
             {
@@ -206,8 +216,10 @@ namespace StudioCore.ParamEditor
         /// </summary>
         private Dictionary<string, string?> _usedTentativeParamTypes = null;
 
-        private void LoadParamFromBinder(IBinder parambnd, ref Dictionary<string, Param> paramBank, out ulong version, bool checkVersion = false)
+        private void LoadParamFromBinder(IBinder parambnd, ref Dictionary<string, Param> paramBank, out ulong version, bool checkVersion = false, bool isPTDE = false)
         {
+            var paramdefs = isPTDE ? _paramdefsPTDE : _paramdefs;
+
             bool success = ulong.TryParse(parambnd.Version, out version);
             if (checkVersion && !success)
             {
@@ -236,7 +248,7 @@ namespace StudioCore.ParamEditor
                     p = Param.ReadIgnoreCompression(f.Bytes);
                     if (!string.IsNullOrEmpty(p.ParamType))
                     {
-                        if (!_paramdefs.ContainsKey(p.ParamType))
+                        if (!paramdefs.ContainsKey(p.ParamType))
                         {
                             if (_tentativeParamType.TryGetValue(paramName, out string newParamType))
                             {
@@ -271,7 +283,7 @@ namespace StudioCore.ParamEditor
                 else
                 {
                     p = Param.ReadIgnoreCompression(f.Bytes);
-                    if (!_paramdefs.ContainsKey(p.ParamType ?? ""))
+                    if (!paramdefs.ContainsKey(p.ParamType ?? ""))
                     {
                         TaskLogs.AddLog($"Couldn't find ParamDef for param {paramName} with ParamType \"{p.ParamType}\".",
                             Microsoft.Extensions.Logging.LogLevel.Warning);
@@ -290,7 +302,7 @@ namespace StudioCore.ParamEditor
 
                 if (p.ParamType == null)
                     throw new Exception("Param type is unexpectedly null");
-                PARAMDEF def = _paramdefs[p.ParamType];
+                PARAMDEF def = paramdefs[p.ParamType];
                 try
                 {
                     p.ApplyParamdef(def, version);
@@ -461,7 +473,7 @@ namespace StudioCore.ParamEditor
         private void LoadParamsDS1FromFile(string path)
         {
             using var bnd = BND3.Read(path);
-            LoadParamFromBinder(bnd, ref _params, out _paramVersion);
+            LoadParamFromBinder(bnd, ref _params, out _paramVersion, false);
         }
 
         private void LoadParamsDS1R()
@@ -509,14 +521,14 @@ namespace StudioCore.ParamEditor
             {
                 foreach (var p in Directory.GetFiles($@"{AssetLocator.GameRootDirectory}\param\DrawParam", "*.parambnd.dcx"))
                 {
-                    LoadParamsDS1FromFile(p);
+                    LoadParamsDS1RFromFile(p);
                 }
             }
         }
-        private void LoadParamsDS1RFromFile(string path)
+        private void LoadParamsDS1RFromFile(string path, bool isPTDE = false)
         {
             using var bnd = BND3.Read(path);
-            LoadParamFromBinder(bnd, ref _params, out _paramVersion);
+            LoadParamFromBinder(bnd, ref _params, out _paramVersion, false, isPTDE);
         }
 
         private void LoadParamsBBSekiro()
@@ -1017,7 +1029,7 @@ namespace StudioCore.ParamEditor
             }
             else if (locator.Type == GameType.DarkSoulsRemastered)
             {
-                newBank.LoadParamsDS1RFromFile(path);
+                newBank.LoadParamsDS1RFromFile(path, true);
             }
             else if (locator.Type == GameType.DarkSoulsPTDE)
             {

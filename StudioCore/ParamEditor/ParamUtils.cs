@@ -63,7 +63,17 @@ namespace StudioCore.ParamEditor
         }
         public static bool IsValueDiff(ref object value, ref object valueBase, Type t)
         {
-            return value != null && valueBase != null && !(value.Equals(valueBase) || (t == typeof(byte[]) && ParamUtils.ByteArrayEquals((byte[])value, (byte[])valueBase)));
+            if (value == null || valueBase == null)
+                return false;
+
+            if (value.GetType() != t)
+            {
+                var converted = Convert.ChangeType(value, t);
+                if (converted != null)
+                    return !converted.Equals(valueBase);
+            }
+
+            return !(value.Equals(valueBase) || (t == typeof(byte[]) && ParamUtils.ByteArrayEquals((byte[])value, (byte[])valueBase)));
         }
         
         public static string ToParamEditorString(this object val)
@@ -89,7 +99,10 @@ namespace StudioCore.ParamEditor
 
         public static (PseudoColumn, Param.Column) GetAs(this (PseudoColumn, Param.Column) col, Param newParam)
         {
-            return (col.Item1, col.Item2 == null || newParam == null ? null : newParam.Columns.FirstOrDefault((x) => x.Def.InternalName == col.Item2.Def.InternalName && x.GetByteOffset() == col.Item2.GetByteOffset()));
+            //return (col.Item1, col.Item2 == null || newParam == null ? null : newParam.Columns.FirstOrDefault(
+            //    (x) => x.Def.InternalName == col.Item2.Def.InternalName && x.GetByteOffset() == col.Item2.GetByteOffset()));
+            return (col.Item1, col.Item2 == null || newParam == null ? null : newParam.Columns.FirstOrDefault(
+                (x) => x.Def.InternalName == col.Item2.Def.InternalName && x.Def.SortID == col.Item2.Def.SortID));
         }
         public static bool IsColumnValid(this (PseudoColumn, Param.Column) col)
         {
