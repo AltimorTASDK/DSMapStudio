@@ -204,25 +204,38 @@ void main()
 	//F0 *= F0;
 
 	float roughness;
-	if (c_gameID == GAME_BLOODBORNE || c_gameID == GAME_DS1_PTDE || c_gameID == GAME_DS2)
+	if (c_gameID == GAME_BLOODBORNE || c_gameID == GAME_DS1_PTDE || c_gameID == GAME_DS2 || c_gameID == GAME_DS1_REMASTER)
 	{
 #ifdef MATERIAL_BLEND
-		vec3 shininessColor;
+		vec4 shininessColor;
 		if (c_blendShininess)
 		{
 			vec4 s1 = texture(sampler2D(globalTextures[nonuniformEXT(int(matdata[fsin_mat].shininessTex))], anisoLinearSampler), fsin_texcoord.xy);
 			vec4 s2 = texture(sampler2D(globalTextures[nonuniformEXT(int(matdata[fsin_mat].shininessTex2))], anisoLinearSampler), fsin_texcoord2.xy);
-			shininessColor = mix(s1, s2, blend).rgb;
+			shininessColor = mix(s1, s2, blend);
 		}
 		else
 		{
-			shininessColor = texture(sampler2D(globalTextures[nonuniformEXT(int(matdata[fsin_mat].shininessTex))], anisoLinearSampler), fsin_texcoord.xy).xyz;
+			shininessColor = texture(sampler2D(globalTextures[nonuniformEXT(int(matdata[fsin_mat].shininessTex))], anisoLinearSampler), fsin_texcoord.xy);
 		}
 #else
-		vec3 shininessColor = texture(sampler2D(globalTextures[nonuniformEXT(int(matdata[fsin_mat].shininessTex))], anisoLinearSampler), fsin_texcoord.xy).xyz;
+		vec4 shininessColor = texture(sampler2D(globalTextures[nonuniformEXT(int(matdata[fsin_mat].shininessTex))], anisoLinearSampler), fsin_texcoord.xy);
 #endif
 		//roughness = 1.0 - (normalColor.z * shininessColor.r);
-		roughness = 1.0 - shininessColor.r;
+
+                if (c_gameID == GAME_DS1_REMASTER)
+                {
+                        roughness = shininessColor.r;
+                        float metalness = shininessColor.g;
+                        float diffuseF0 = shininessColor.b / 5.0;
+                        float lightPower = shininessColor.a;
+                        F0 = mix(diffuseF0.rrr, diffuseColor.rgb, metalness);
+                        diffuseColor.rgb *= lightPower * (1.0 - metalness);
+                }
+                else
+                {
+                        roughness = 1.0 - shininessColor.r;
+                }
 	}
 	else
 	{
