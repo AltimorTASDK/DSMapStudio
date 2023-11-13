@@ -10,6 +10,7 @@ using System.Buffers;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.IO;
+using System.Text.RegularExpressions;
 using Veldrid;
 using Veldrid.Utilities;
 using SoulsFormats;
@@ -288,7 +289,7 @@ namespace StudioCore.Resource
 
         public Scene.GPUBufferAllocator.GPUBufferHandle StaticBoneBuffer { get; private set; } = null;
 
-        private string TexturePathToVirtual(string texpath)
+        private string TexturePathToVirtual(string texpath, GameType gameType)
         {
             if (texpath.Contains(@"\map\"))
             {
@@ -320,14 +321,32 @@ namespace StudioCore.Resource
             // Parts texture reference
             else if (texpath.Contains(@"\parts\"))
             {
-                var splits = texpath.Split('\\');
-                var partsId = splits[splits.Length - 3];
-                return $@"parts/{partsId}/tex/{Path.GetFileNameWithoutExtension(texpath)}";
+                if (gameType == GameType.DarkSoulsRemastered)
+                {
+                    var splits = texpath.Split('\\');
+                    var partsId = splits[splits.Length - 4];
+                    var charRegex = new Regex(@"^c\d{4}_");
+                    if (charRegex.IsMatch(splits[splits.Length - 1]))
+                    {
+                        var chrId = splits[splits.Length - 1].Substring(0, 5);
+                        return $@"chr/{chrId}/tex/{Path.GetFileNameWithoutExtension(texpath)}";
+                    }
+                    else
+                    {
+                        return $@"parts/{partsId}/tex/{Path.GetFileNameWithoutExtension(texpath)}";
+                    }
+                }
+                else
+                {
+                    var splits = texpath.Split('\\');
+                    var partsId = splits[splits.Length - 3];
+                    return $@"parts/{partsId}/tex/{Path.GetFileNameWithoutExtension(texpath)}";
+                }
             }
             return texpath;
         }
 
-        private void LookupTexture(FlverMaterial.TextureType textureType, FlverMaterial dest, string type, string mpath, string mtd)
+        private void LookupTexture(FlverMaterial.TextureType textureType, FlverMaterial dest, string type, string mpath, string mtd, GameType gameType)
         {
             var path = mpath;
             if (mpath == "")
@@ -361,7 +380,7 @@ namespace StudioCore.Resource
 
             if (!dest.TextureResourceFilled[(int)textureType])
             {
-                ResourceManager.AddResourceListener<TextureResource>(TexturePathToVirtual(path.ToLower()), dest,
+                ResourceManager.AddResourceListener<TextureResource>(TexturePathToVirtual(path.ToLower(), gameType), dest,
                     AccessLevel.AccessGPUOptimizedOnly, (int)textureType);
                 dest.TextureResourceFilled[(int)textureType] = true;
             }
@@ -387,34 +406,34 @@ namespace StudioCore.Resource
             }
             if (paramNameCheck == "G_DIFFUSETEXTURE2" || paramNameCheck == "G_DIFFUSE2" || paramNameCheck.Contains("ALBEDO_2"))
             {
-                LookupTexture(FlverMaterial.TextureType.AlbedoTextureResource2, dest, texType, mpath, mtd);
+                LookupTexture(FlverMaterial.TextureType.AlbedoTextureResource2, dest, texType, mpath, mtd, gameType);
                 blend = true;
             }
             else if (paramNameCheck == "G_DIFFUSETEXTURE" || paramNameCheck == "G_DIFFUSE" || paramNameCheck.Contains("ALBEDO"))
             {
-                LookupTexture(FlverMaterial.TextureType.AlbedoTextureResource, dest, texType, mpath, mtd);
+                LookupTexture(FlverMaterial.TextureType.AlbedoTextureResource, dest, texType, mpath, mtd, gameType);
             }
             else if (paramNameCheck == "G_BUMPMAPTEXTURE2" || paramNameCheck == "G_BUMPMAP2" || paramNameCheck.Contains("NORMAL_2"))
             {
-                LookupTexture(FlverMaterial.TextureType.NormalTextureResource2, dest, texType, mpath, mtd);
+                LookupTexture(FlverMaterial.TextureType.NormalTextureResource2, dest, texType, mpath, mtd, gameType);
                 blend = true;
                 hasNormal2 = true;
             }
             else if (paramNameCheck == "G_BUMPMAPTEXTURE" || paramNameCheck == "G_BUMPMAP" || paramNameCheck.Contains("NORMAL"))
             {
-                LookupTexture(FlverMaterial.TextureType.NormalTextureResource, dest, texType, mpath, mtd);
+                LookupTexture(FlverMaterial.TextureType.NormalTextureResource, dest, texType, mpath, mtd, gameType);
             }
             else if (paramNameCheck == "G_SPECULARTEXTURE2" || paramNameCheck == "G_SPECULAR2" || paramNameCheck.Contains("SPECULAR_2"))
             {
                 if (gameType is GameType.DarkSoulsRemastered or GameType.DarkSoulsIISOTFS)
                 {
-                    LookupTexture(FlverMaterial.TextureType.ShininessTextureResource2, dest, texType, mpath, mtd);
+                    LookupTexture(FlverMaterial.TextureType.ShininessTextureResource2, dest, texType, mpath, mtd, gameType);
                     blend = true;
                     hasShininess2 = true;
                 }
                 else
                 {
-                    LookupTexture(FlverMaterial.TextureType.SpecularTextureResource2, dest, texType, mpath, mtd);
+                    LookupTexture(FlverMaterial.TextureType.SpecularTextureResource2, dest, texType, mpath, mtd, gameType);
                     blend = true;
                     hasSpec2 = true;
                 }
@@ -423,26 +442,26 @@ namespace StudioCore.Resource
             {
                 if (gameType is GameType.DarkSoulsRemastered or GameType.DarkSoulsIISOTFS)
                 {
-                    LookupTexture(FlverMaterial.TextureType.ShininessTextureResource, dest, texType, mpath, mtd);
+                    LookupTexture(FlverMaterial.TextureType.ShininessTextureResource, dest, texType, mpath, mtd, gameType);
                 }
                 else
                 {
-                    LookupTexture(FlverMaterial.TextureType.SpecularTextureResource, dest, texType, mpath, mtd);
+                    LookupTexture(FlverMaterial.TextureType.SpecularTextureResource, dest, texType, mpath, mtd, gameType);
                 }
             }
             else if (paramNameCheck == "G_SHININESSTEXTURE2" || paramNameCheck == "G_SHININESS2" || paramNameCheck.Contains("SHININESS2"))
             {
-                LookupTexture(FlverMaterial.TextureType.ShininessTextureResource2, dest, texType, mpath, mtd);
+                LookupTexture(FlverMaterial.TextureType.ShininessTextureResource2, dest, texType, mpath, mtd, gameType);
                 blend = true;
                 hasShininess2 = true;
             }
             else if (paramNameCheck == "G_SHININESSTEXTURE" || paramNameCheck == "G_SHININESS" || paramNameCheck.Contains("SHININESS"))
             {
-                LookupTexture(FlverMaterial.TextureType.ShininessTextureResource, dest, texType, mpath, mtd);
+                LookupTexture(FlverMaterial.TextureType.ShininessTextureResource, dest, texType, mpath, mtd, gameType);
             }
             else if (paramNameCheck.Contains("BLENDMASK"))
             {
-                LookupTexture(FlverMaterial.TextureType.BlendmaskTextureResource, dest, texType, mpath, mtd);
+                LookupTexture(FlverMaterial.TextureType.BlendmaskTextureResource, dest, texType, mpath, mtd, gameType);
                 blendMask = true;
             }
         }
