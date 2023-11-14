@@ -40,7 +40,12 @@ namespace StudioCore.MsbEditor
                 try
                 {
                     IBinder mtdBinder = null;
-                    if (AssetLocator.Type == GameType.DarkSoulsIII || AssetLocator.Type == GameType.Sekiro)
+                    if (AssetLocator.Type == GameType.DarkSoulsRemastered)
+                    {
+                        mtdBinder = BND3.Read(AssetLocator.GetAssetPath($@"mtd\Mtd.mtdbnd.dcx"));
+                        IsMatbin = false;
+                    }
+                    else if (AssetLocator.Type == GameType.DarkSoulsIII || AssetLocator.Type == GameType.Sekiro)
                     {
                         mtdBinder = BND4.Read(AssetLocator.GetAssetPath($@"mtd\allmaterialbnd.mtdbnd.dcx"));
                         IsMatbin = false;
