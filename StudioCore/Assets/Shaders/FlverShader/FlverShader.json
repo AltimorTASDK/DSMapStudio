@@ -115,6 +115,43 @@
 		]
 	},
 	{
+		"Name": "FlverShader_blend_lightmap",
+		"Shaders": [
+			{
+				"Stage": "1",
+				"FileName": "FlverShader.vert"
+			},
+			{
+				"Stage": "16",
+				"FileName": "FlverShader.frag"
+			}
+		],
+		"Targets": [],
+		"Macros": [
+			{ "Name": "MATERIAL_BLEND" },
+			{ "Name": "LIGHTMAP" }
+		]
+	},
+	{
+		"Name": "FlverShader_blendmask_lightmap",
+		"Shaders": [
+			{
+				"Stage": "1",
+				"FileName": "FlverShader.vert"
+			},
+			{
+				"Stage": "16",
+				"FileName": "FlverShader.frag"
+			}
+		],
+		"Targets": [],
+		"Macros": [
+			{ "Name": "MATERIAL_BLEND" },
+			{ "Name": "MATERIAL_BLEND_MASK"},
+			{ "Name": "LIGHTMAP" }
+		]
+	},
+	{
 		"Name": "FlverShader_lightmap_selected",
 		"Shaders": [
 			{
@@ -128,6 +165,43 @@
 		],
 		"Targets": [],
 		"Macros": [
+			{ "Name": "LIGHTMAP" }
+		]
+	},
+	{
+		"Name": "FlverShader_blend_lightmap_selected",
+		"Shaders": [
+			{
+				"Stage": "1",
+				"FileName": "FlverShader_selected.vert"
+			},
+			{
+				"Stage": "16",
+				"FileName": "FlverShader_selected.frag"
+			}
+		],
+		"Targets": [],
+		"Macros": [
+			{ "Name": "MATERIAL_BLEND" },
+			{ "Name": "LIGHTMAP" }
+		]
+	},
+	{
+		"Name": "FlverShader_blendmask_lightmap_selected",
+		"Shaders": [
+			{
+				"Stage": "1",
+				"FileName": "FlverShader_selected.vert"
+			},
+			{
+				"Stage": "16",
+				"FileName": "FlverShader_selected.frag"
+			}
+		],
+		"Targets": [],
+		"Macros": [
+			{ "Name": "MATERIAL_BLEND" },
+			{ "Name": "MATERIAL_BLEND_MASK"},
 			{ "Name": "LIGHTMAP" }
 		]
 	}

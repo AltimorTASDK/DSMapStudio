@@ -12,5 +12,13 @@
 .\FlverShader_blendmask_selected.frag.spv
 .\FlverShader_lightmap.vert.spv
 .\FlverShader_lightmap.frag.spv
+.\FlverShader_blend_lightmap.vert.spv
+.\FlverShader_blend_lightmap.frag.spv
+.\FlverShader_blendmask_lightmap.vert.spv
+.\FlverShader_blendmask_lightmap.frag.spv
 .\FlverShader_lightmap_selected.vert.spv
 .\FlverShader_lightmap_selected.frag.spv
+.\FlverShader_blend_lightmap_selected.vert.spv
+.\FlverShader_blend_lightmap_selected.frag.spv
+.\FlverShader_blendmask_lightmap_selected.vert.spv
+.\FlverShader_blendmask_lightmap_selected.frag.spv

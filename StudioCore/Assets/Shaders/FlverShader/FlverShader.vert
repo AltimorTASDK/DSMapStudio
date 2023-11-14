@@ -41,9 +41,11 @@ layout(location = 2) in ivec4 normal;
 layout(location = 3) in ivec4 binormal;
 layout(location = 4) in ivec4 bitangent;
 layout(location = 5) in uvec4 color;
-
 #if defined(MATERIAL_BLEND) || defined(LIGHTMAP)
 	layout(location = 6) in ivec2 uv2;
+#if defined(MATERIAL_BLEND) && defined(LIGHTMAP)
+	layout(location = 7) in ivec2 uv3;
+#endif
 #endif
 
 layout(location = 0) out vec2 fsin_texcoord;
@@ -56,6 +58,9 @@ layout(location = 8) out uint fsin_mat;
 layout(location = 9) out uint fsin_entityid;
 #if defined(MATERIAL_BLEND) || defined(LIGHTMAP)
 	layout(location = 10) out vec2 fsin_texcoord2;
+#if defined(MATERIAL_BLEND) && defined(LIGHTMAP)
+        layout(location = 11) out vec2 fsin_texcoord3;
+#endif
 #endif
 
 void main()
@@ -64,9 +69,13 @@ void main()
 	fsin_texcoord = vec2(uv) / 2048.0;
 #if defined(MATERIAL_BLEND) || defined(LIGHTMAP)
 	fsin_texcoord2 = vec2(uv2) / 2048.0;
+#if defined(MATERIAL_BLEND) && defined(LIGHTMAP)
+	fsin_texcoord3 = vec2(uv3) / 2048.0;
+#endif
 #endif
 	fsin_normal = normalize(mat3(w) * vec3(normal));
 	fsin_bitangent = bitangent;
+        fsin_color = color;
 	fsin_view = normalize(sceneparam.eye.xyz - (w * vec4(position, 1)).xyz);
 	fsin_mat = idata[gl_InstanceIndex].materialID.x;
 	fsin_entityid = idata[gl_InstanceIndex].materialID.w;

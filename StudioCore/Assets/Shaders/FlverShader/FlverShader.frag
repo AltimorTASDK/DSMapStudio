@@ -27,8 +27,13 @@ layout(location = 6) in vec4 fsin_bitangent;
 layout(location = 7) in vec4 fsin_color;
 layout(location = 8) flat in uint fsin_mat;
 layout(location = 9) flat in uint fsin_entityid;
-#if defined(MATERIAL_BLEND) || defined(LIGHTMAP)
+#if defined(MATERIAL_BLEND)
 	layout(location = 10) in vec2 fsin_texcoord2;
+        #ifdef LIGHTMAP
+                layout(location = 11) in vec2 fsin_texcoord_light;
+        #endif
+#elif defined(LIGHTMAP)
+        layout(location = 10) in vec2 fsin_texcoord_light;
 #endif
 
 layout(location = 0) out vec4 fsout_color;
@@ -136,7 +141,7 @@ void UpdatePickingBuffer(ivec2 pos, uint64_t identity, float z)
 
 void main()
 {
-    //fsout_color = vec4(1.0, 1.0, 1.0, 1.0);
+        //fsout_color = vec4(1.0, 1.0, 1.0, 1.0);
 	vec3 lightdir = normalize(vec3(sceneparam.lightDirection));
 	vec3 viewVec = normalize(fsin_view);
 
@@ -154,7 +159,7 @@ void main()
 #endif
 
 #ifdef LIGHTMAP
-	diffuseColor.rgb *= texture(sampler2D(globalTextures[nonuniformEXT(int(matdata[fsin_mat].lightmapTex))], anisoLinearSampler), fsin_texcoord2.xy).rgb;
+	diffuseColor.rgb *= texture(sampler2D(globalTextures[nonuniformEXT(int(matdata[fsin_mat].lightmapTex))], anisoLinearSampler), fsin_texcoord_light.xy).rgb;
 #endif
 
 	if (diffuseColor.w < 0.5)

@@ -400,7 +400,7 @@ namespace StudioCore.Resource
             {
                 paramNameCheck = texType.ToUpper();
             }
-            if (paramNameCheck == "G_DIFFUSETEXTURE2" || paramNameCheck == "G_DIFFUSE2" || paramNameCheck.Contains("ALBEDO_2"))
+            if (paramNameCheck == "G_DIFFUSETEXTURE2" || paramNameCheck == "G_DIFFUSE2" || paramNameCheck == "G_DIFFUSE_2" || paramNameCheck.Contains("ALBEDO_2"))
             {
                 LookupTexture(FlverMaterial.TextureType.AlbedoTextureResource2, dest, texType, mpath, mtd, gameType);
                 blend = true;
@@ -409,7 +409,7 @@ namespace StudioCore.Resource
             {
                 LookupTexture(FlverMaterial.TextureType.AlbedoTextureResource, dest, texType, mpath, mtd, gameType);
             }
-            else if (paramNameCheck == "G_BUMPMAPTEXTURE2" || paramNameCheck == "G_BUMPMAP2" || paramNameCheck.Contains("NORMAL_2"))
+            else if (paramNameCheck == "G_BUMPMAPTEXTURE2" || paramNameCheck == "G_BUMPMAP2" || paramNameCheck == "G_BUMPMAP_2" || paramNameCheck.Contains("NORMAL_2"))
             {
                 LookupTexture(FlverMaterial.TextureType.NormalTextureResource2, dest, texType, mpath, mtd, gameType);
                 blend = true;
@@ -538,8 +538,21 @@ namespace StudioCore.Resource
 
             if (lightmap)
             {
-                dest.ShaderName = @"FlverShader\FlverShader_lightmap";
-                dest.LayoutType = MeshLayoutType.LayoutUV2;
+                if (blendMask)
+                {
+                    dest.ShaderName = @"FlverShader\FlverShader_blendmask_lightmap";
+                    dest.LayoutType = MeshLayoutType.LayoutUV3;
+                }
+                else if (blend)
+                {
+                    dest.ShaderName = @"FlverShader\FlverShader_blend_lightmap";
+                    dest.LayoutType = MeshLayoutType.LayoutUV3;
+                }
+                else
+                {
+                    dest.ShaderName = @"FlverShader\FlverShader_lightmap";
+                    dest.LayoutType = MeshLayoutType.LayoutUV2;
+                }
             }
             else if (blendMask)
             {
@@ -607,8 +620,21 @@ namespace StudioCore.Resource
 
             if (lightmap)
             {
-                dest.ShaderName = @"FlverShader\FlverShader_lightmap";
-                dest.LayoutType = MeshLayoutType.LayoutUV2;
+                if (blendMask)
+                {
+                    dest.ShaderName = @"FlverShader\FlverShader_blendmask_lightmap";
+                    dest.LayoutType = MeshLayoutType.LayoutUV3;
+                }
+                else if (blend)
+                {
+                    dest.ShaderName = @"FlverShader\FlverShader_blend_lightmap";
+                    dest.LayoutType = MeshLayoutType.LayoutUV3;
+                }
+                else
+                {
+                    dest.ShaderName = @"FlverShader\FlverShader_lightmap";
+                    dest.LayoutType = MeshLayoutType.LayoutUV2;
+                }
             }
             else if (blendMask)
             {
@@ -1249,6 +1275,112 @@ namespace StudioCore.Resource
             }
         }
 
+        private unsafe void FillVerticesUV3(BinaryReaderEx br, ref FlverVertexBuffer buffer, Span<FlverBufferLayoutMember> layouts, Span<Vector3> pickingVerts, IntPtr vertBuffer, float uvFactor)
+        {
+            Span<FlverLayoutUV3> verts = new Span<FlverLayoutUV3>(vertBuffer.ToPointer(), buffer.vertexCount);
+            br.StepIn(buffer.bufferOffset);
+            fixed (FlverLayoutUV3* pverts = verts)
+            {
+                for (int i = 0; i < buffer.vertexCount; i++)
+                {
+                    FlverLayoutUV3* v = &pverts[i];
+                    Vector3 n = Vector3.UnitX;
+                    FillBinormalBitangentSNorm8Zero((*v).Binormal, (*v).Bitangent);
+                    int uvsfilled = 0;
+                    foreach (var l in layouts)
+                    {
+                        // ER meme
+                        if (l.unk00 == -2147483647)
+                            continue;
+                        if (l.semantic == FLVER.LayoutSemantic.Position)
+                        {
+                            FillVertex(&(*v).Position, br, l.type);
+                        }
+                        else if (l.semantic == FLVER.LayoutSemantic.Normal)
+                        {
+                            FillNormalSNorm8((*v).Normal, br, l.type, &n);
+                        }
+                        else if (l.semantic == FLVER.LayoutSemantic.UV && uvsfilled < 3)
+                        {
+                            bool hasv2;
+                            FillUVShort(uvsfilled > 1 ? (*v).Uv3 : uvsfilled > 0 ? (*v).Uv2 : (*v).Uv1, br, l.type, uvFactor, false, out hasv2);
+                            uvsfilled += (hasv2 ? 2 : 1);
+                        }
+                        else if (l.semantic == FLVER.LayoutSemantic.Tangent && l.index == 0)
+                        {
+                            FillBinormalBitangentSNorm8((*v).Binormal, (*v).Bitangent, &n, br, l.type);
+                        }
+                        else
+                        {
+                            EatVertex(br, l.type);
+                        }
+                    }
+
+                    pickingVerts[i] = (*v).Position;
+                }
+            }
+
+            br.StepOut();
+        }
+
+        unsafe private void FillVerticesUV3(FLVER2.Mesh mesh, Span<Vector3> pickingVerts, IntPtr vertBuffer)
+        {
+            Span<FlverLayoutUV3> verts = new Span<FlverLayoutUV3>(vertBuffer.ToPointer(), mesh.VertexCount);
+            fixed (FlverLayoutUV3* pverts = verts)
+            {
+                for (int i = 0; i < mesh.VertexCount; i++)
+                {
+                    var vert = mesh.Vertices[i];
+
+                    verts[i] = new FlverLayoutUV3();
+                    pickingVerts[i] = new Vector3(vert.Position.X, vert.Position.Y, vert.Position.Z);
+                    FlverLayoutUV3* v = &pverts[i];
+                    FillVertex(ref (*v).Position, ref vert);
+                    FillNormalSNorm8((*v).Normal, ref vert);
+                    FillUVShort((*v).Uv1, ref vert, 0);
+                    FillUVShort((*v).Uv2, ref vert, 1);
+                    FillUVShort((*v).Uv3, ref vert, 2);
+                    if (vert.TangentCount > 0)
+                    {
+                        FillBinormalBitangentSNorm8((*v).Binormal, (*v).Bitangent, ref vert, 0);
+                    }
+                    else
+                    {
+                        FillBinormalBitangentSNorm8Zero((*v).Binormal, (*v).Bitangent);
+                    }
+                }
+            }
+        }
+
+        unsafe private void FillVerticesUV3(FLVER0.Mesh mesh, Span<Vector3> pickingVerts, IntPtr vertBuffer)
+        {
+            Span<FlverLayoutUV3> verts = new Span<FlverLayoutUV3>(vertBuffer.ToPointer(), mesh.Vertices.Count);
+            fixed (FlverLayoutUV3* pverts = verts)
+            {
+                for (int i = 0; i < mesh.Vertices.Count; i++)
+                {
+                    var vert = mesh.Vertices[i];
+
+                    verts[i] = new FlverLayoutUV3();
+                    pickingVerts[i] = new Vector3(vert.Position.X, vert.Position.Y, vert.Position.Z);
+                    FlverLayoutUV3* v = &pverts[i];
+                    FillVertex(ref (*v).Position, ref vert);
+                    FillNormalSNorm8((*v).Normal, ref vert);
+                    FillUVShort((*v).Uv1, ref vert, 0);
+                    FillUVShort((*v).Uv2, ref vert, 1);
+                    FillUVShort((*v).Uv3, ref vert, 2);
+                    if (vert.TangentCount > 0)
+                    {
+                        FillBinormalBitangentSNorm8((*v).Binormal, (*v).Bitangent, ref vert, 0);
+                    }
+                    else
+                    {
+                        FillBinormalBitangentSNorm8Zero((*v).Binormal, (*v).Bitangent);
+                    }
+                }
+            }
+        }
+
         unsafe private void ProcessMesh(FLVER0.Mesh mesh, FlverSubmesh dest)
         {
             var factory = Scene.Renderer.Factory;
@@ -1297,6 +1429,10 @@ namespace StudioCore.Resource
             if (dest.Material.LayoutType == MeshLayoutType.LayoutSky)
             {
                 FillVerticesNormalOnly(mesh, pvhandle, meshVertices);
+            }
+            else if (dest.Material.LayoutType == MeshLayoutType.LayoutUV3)
+            {
+                FillVerticesUV3(mesh, pvhandle, meshVertices);
             }
             else if (dest.Material.LayoutType == MeshLayoutType.LayoutUV2)
             {
@@ -1410,6 +1546,10 @@ namespace StudioCore.Resource
             if (dest.Material.LayoutType == MeshLayoutType.LayoutSky)
             {
                 FillVerticesNormalOnly(mesh, pvhandle, meshVertices);
+            }
+            else if (dest.Material.LayoutType == MeshLayoutType.LayoutUV3)
+            {
+                FillVerticesUV3(mesh, pvhandle, meshVertices);
             }
             else if (dest.Material.LayoutType == MeshLayoutType.LayoutUV2)
             {
@@ -1607,6 +1747,10 @@ namespace StudioCore.Resource
                 if (dest.Material.LayoutType == MeshLayoutType.LayoutSky)
                 {
                     FillVerticesNormalOnly(br, ref vb, layoutmembers, pvhandle, meshVertices);
+                }
+                else if (dest.Material.LayoutType == MeshLayoutType.LayoutUV3)
+                {
+                    FillVerticesUV3(br, ref vb, layoutmembers, pvhandle, meshVertices, version >= 0x2000F ? 2048 : 1024);
                 }
                 else if (dest.Material.LayoutType == MeshLayoutType.LayoutUV2)
                 {

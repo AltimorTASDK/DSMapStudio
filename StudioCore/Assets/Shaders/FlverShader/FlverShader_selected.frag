@@ -27,8 +27,13 @@ layout(location = 6) in vec4 fsin_bitangent;
 layout(location = 7) in vec4 fsin_color;
 layout(location = 8) flat in uint fsin_mat;
 layout(location = 9) flat in uint fsin_entityid;
-#if defined(MATERIAL_BLEND) || defined(LIGHTMAP)
+#if defined(MATERIAL_BLEND)
 	layout(location = 10) in vec2 fsin_texcoord2;
+        #ifdef LIGHTMAP
+                layout(location = 11) in vec2 fsin_texcoord_light;
+        #endif
+#elif defined(LIGHTMAP)
+        layout(location = 10) in vec2 fsin_texcoord_light;
 #endif
 
 layout(location = 0) out vec4 fsout_color;
