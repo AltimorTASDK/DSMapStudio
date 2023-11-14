@@ -1081,7 +1081,7 @@ namespace StudioCore
                     ret.AssetVirtualPath = $@"map/{mapid}/hit/lo/l{model.Substring(1)}.hkx";
                 }
             }
-            else if (Type == GameType.DarkSoulsIISOTFS)
+            else if (Type == GameType.DarkSoulsIISOTFS || Type == GameType.DarkSoulsRemastered)
             {
                 ret.AssetPath = GetAssetPath($@"model\map\h{mapid.Substring(1)}.hkxbhd");
                 ret.AssetName = model;
