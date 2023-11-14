@@ -933,9 +933,45 @@ namespace StudioCore.Resource
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void FillColorUNorm(byte* dest, ref FLVER.Vertex v)
+        private unsafe void FillColorUNorm(byte* dest, ref FLVER.Vertex v, byte index)
         {
-            
+            var color = v.GetColor(index);
+            dest[0] = (byte)(color.R * 255f);
+            dest[1] = (byte)(color.G * 255f);
+            dest[2] = (byte)(color.B * 255f);
+            dest[3] = (byte)(color.A * 255f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private unsafe void FillColorUNorm(byte* dest, BinaryReaderEx br, FLVER.LayoutType type)
+        {
+            if (type == FLVER.LayoutType.Float4)
+            {
+                dest[0] = (byte)(br.ReadSingle() * 255f);
+                dest[1] = (byte)(br.ReadSingle() * 255f);
+                dest[2] = (byte)(br.ReadSingle() * 255f);
+                dest[3] = (byte)(br.ReadSingle() * 255f);
+            }
+            else if (type == FLVER.LayoutType.Byte4A || type == FLVER.LayoutType.Byte4C)
+            {
+                dest[0] = br.ReadByte();
+                dest[1] = br.ReadByte();
+                dest[2] = br.ReadByte();
+                dest[3] = br.ReadByte();
+            }
+            else
+            {
+                throw new NotImplementedException($"Read not implemented for {type} vertex color.");
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private unsafe void FillColorUNormZero(byte* dest)
+        {
+            dest[0] = 0;
+            dest[1] = 0;
+            dest[2] = 0;
+            dest[3] = 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1061,6 +1097,7 @@ namespace StudioCore.Resource
                 Vector3 n = Vector3.UnitX;
                 FillUVShortZero((*v).Uv1);
                 FillBinormalBitangentSNorm8Zero((*v).Binormal, (*v).Bitangent);
+                FillColorUNormZero((*v).Color);
                 bool posfilled = false;
                 foreach (var l in layouts)
                 {
@@ -1084,6 +1121,10 @@ namespace StudioCore.Resource
                     else if (l.semantic == FLVER.LayoutSemantic.Tangent && l.index == 0)
                     {
                         FillBinormalBitangentSNorm8((*v).Binormal, (*v).Bitangent, &n, br, l.type);
+                    }
+                    else if (l.semantic == FLVER.LayoutSemantic.VertexColor && l.index == 0)
+                    {
+                        FillColorUNorm((*v).Color, br, l.type);
                     }
                     else
                     {
@@ -1132,6 +1173,15 @@ namespace StudioCore.Resource
                     {
                         FillBinormalBitangentSNorm8Zero((*v).Binormal, (*v).Bitangent);
                     }
+
+                    if (vert.ColorCount > 0)
+                    {
+                        FillColorUNorm((*v).Color, ref vert, 0);
+                    }
+                    else
+                    {
+                        FillColorUNormZero((*v).Color);
+                    }
                 }
             }
         }
@@ -1167,6 +1217,15 @@ namespace StudioCore.Resource
                     {
                         FillBinormalBitangentSNorm8Zero((*v).Binormal, (*v).Bitangent);
                     }
+
+                    if (vert.ColorCount > 0)
+                    {
+                        FillColorUNorm((*v).Color, ref vert, 0);
+                    }
+                    else
+                    {
+                        FillColorUNormZero((*v).Color);
+                    }
                 }
             }
         }
@@ -1182,6 +1241,7 @@ namespace StudioCore.Resource
                     FlverLayoutUV2* v = &pverts[i];
                     Vector3 n = Vector3.UnitX;
                     FillBinormalBitangentSNorm8Zero((*v).Binormal, (*v).Bitangent);
+                    FillColorUNormZero((*v).Color);
                     int uvsfilled = 0;
                     foreach (var l in layouts)
                     {
@@ -1205,6 +1265,10 @@ namespace StudioCore.Resource
                         else if (l.semantic == FLVER.LayoutSemantic.Tangent && l.index == 0)
                         {
                             FillBinormalBitangentSNorm8((*v).Binormal, (*v).Bitangent, &n, br, l.type);
+                        }
+                        else if (l.semantic == FLVER.LayoutSemantic.VertexColor && l.index == 0)
+                        {
+                            FillColorUNorm((*v).Color, br, l.type);
                         }
                         else
                         {
@@ -1243,6 +1307,14 @@ namespace StudioCore.Resource
                     {
                         FillBinormalBitangentSNorm8Zero((*v).Binormal, (*v).Bitangent);
                     }
+                    if (vert.ColorCount > 0)
+                    {
+                        FillColorUNorm((*v).Color, ref vert, 0);
+                    }
+                    else
+                    {
+                        FillColorUNormZero((*v).Color);
+                    }
                 }
             }
         }
@@ -1271,6 +1343,14 @@ namespace StudioCore.Resource
                     {
                         FillBinormalBitangentSNorm8Zero((*v).Binormal, (*v).Bitangent);
                     }
+                    if (vert.ColorCount > 0)
+                    {
+                        FillColorUNorm((*v).Color, ref vert, 0);
+                    }
+                    else
+                    {
+                        FillColorUNormZero((*v).Color);
+                    }
                 }
             }
         }
@@ -1286,6 +1366,7 @@ namespace StudioCore.Resource
                     FlverLayoutUV3* v = &pverts[i];
                     Vector3 n = Vector3.UnitX;
                     FillBinormalBitangentSNorm8Zero((*v).Binormal, (*v).Bitangent);
+                    FillColorUNormZero((*v).Color);
                     int uvsfilled = 0;
                     foreach (var l in layouts)
                     {
@@ -1309,6 +1390,10 @@ namespace StudioCore.Resource
                         else if (l.semantic == FLVER.LayoutSemantic.Tangent && l.index == 0)
                         {
                             FillBinormalBitangentSNorm8((*v).Binormal, (*v).Bitangent, &n, br, l.type);
+                        }
+                        else if (l.semantic == FLVER.LayoutSemantic.VertexColor && l.index == 0)
+                        {
+                            FillColorUNorm((*v).Color, br, l.type);
                         }
                         else
                         {
@@ -1348,6 +1433,14 @@ namespace StudioCore.Resource
                     {
                         FillBinormalBitangentSNorm8Zero((*v).Binormal, (*v).Bitangent);
                     }
+                    if (vert.ColorCount > 0)
+                    {
+                        FillColorUNorm((*v).Color, ref vert, 0);
+                    }
+                    else
+                    {
+                        FillColorUNormZero((*v).Color);
+                    }
                 }
             }
         }
@@ -1376,6 +1469,14 @@ namespace StudioCore.Resource
                     else
                     {
                         FillBinormalBitangentSNorm8Zero((*v).Binormal, (*v).Bitangent);
+                    }
+                    if (vert.ColorCount > 0)
+                    {
+                        FillColorUNorm((*v).Color, ref vert, 0);
+                    }
+                    else
+                    {
+                        FillColorUNormZero((*v).Color);
                     }
                 }
             }

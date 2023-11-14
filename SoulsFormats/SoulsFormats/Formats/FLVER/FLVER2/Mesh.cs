@@ -181,6 +181,7 @@ namespace SoulsFormats
                     {
                         Vertices[i].UVCount = 0;
                         Vertices[i].TangentCount = 0;
+                        Vertices[i].ColorCount = 0;
                     }
                 }
 

@@ -54,15 +54,17 @@ namespace SoulsFormats
             /// Texture coordinates of the vertex.
             /// </summary>
             //public List<Vector3> UVs;
+            private const int MAX_UVS = 20;
             public byte UVCount;
-            private fixed float UVs[60];
+            private fixed float UVs[MAX_UVS * 3];
 
             /// <summary>
             /// Vector pointing perpendicular to the normal.
             /// </summary>
             //public List<Vector4> Tangents;
+            private const int MAX_TANGENTS = 15;
             public byte TangentCount;
-            private fixed float Tangents[60];
+            private fixed float Tangents[MAX_TANGENTS * 4];
 
             /// <summary>
             /// Vector pointing perpendicular to the normal and tangent.
@@ -72,7 +74,10 @@ namespace SoulsFormats
             /// <summary>
             /// Data used for alpha, blending, etc.
             /// </summary>
-            public List<VertexColor> Colors;
+            //public List<VertexColor> Colors;
+            private const int MAX_COLORS = 15;
+            public byte ColorCount;
+            private fixed float Colors[MAX_COLORS * 4];
 
 
 
@@ -82,7 +87,7 @@ namespace SoulsFormats
 
             public Vector3 GetUV(byte index)
             {
-                if (index > UVCount)
+                if (index >= UVCount)
                 {
                     throw new ArgumentOutOfRangeException("Index is too big");
                 }
@@ -91,7 +96,7 @@ namespace SoulsFormats
 
             public void AddUV(Vector3 uv)
             {
-                if (UVCount >= 20)
+                if (UVCount >= MAX_UVS)
                 {
                     throw new Exception("Increase UV count");
                 }
@@ -103,7 +108,7 @@ namespace SoulsFormats
 
             public Vector4 GetTangent(byte index)
             {
-                if (index > TangentCount)
+                if (index >= TangentCount)
                 {
                     throw new ArgumentOutOfRangeException("Index is too big");
                 }
@@ -112,7 +117,7 @@ namespace SoulsFormats
 
             public void AddTangent(Vector4 tangent)
             {
-                if (TangentCount >= 15)
+                if (TangentCount >= MAX_TANGENTS)
                 {
                     throw new Exception("Increase Tangent count");
                 }
@@ -121,6 +126,28 @@ namespace SoulsFormats
                 Tangents[TangentCount * 4 + 2] = tangent.Z;
                 Tangents[TangentCount * 4 + 3] = tangent.W;
                 TangentCount++;
+            }
+
+            public VertexColor GetColor(byte index)
+            {
+                if (index >= ColorCount)
+                {
+                    throw new ArgumentOutOfRangeException("Index is too big");
+                }
+                return new VertexColor(Colors[index * 4], Colors[index * 4 + 1], Colors[index * 4 + 2], Colors[index * 4 + 3]);
+            }
+
+            public void AddColor(VertexColor color)
+            {
+                if (ColorCount >= MAX_COLORS)
+                {
+                    throw new Exception("Increase Color count");
+                }
+                Colors[ColorCount * 4] = color.R;
+                Colors[ColorCount * 4 + 1] = color.G;
+                Colors[ColorCount * 4 + 2] = color.B;
+                Colors[ColorCount * 4 + 3] = color.A;
+                ColorCount++;
             }
 
             /// <summary>
@@ -141,11 +168,12 @@ namespace SoulsFormats
 
                 UVCount = 0;
                 TangentCount = 0;
+                ColorCount = 0;
                 //UVs = new List<Vector3>(uvCapacity);
                 //Tangents = new List<Vector4>(tangentCapacity);
                 //Colors = new List<VertexColor>(colorCapacity);
                 //Tangents = null;
-                Colors = null;
+                //Colors = null;
                 UsesBoneIndices = false;
                 UsesBoneWeights = false;
             }
@@ -162,10 +190,11 @@ namespace SoulsFormats
                 NormalW = clone.NormalW;
                 UVCount = clone.UVCount;
                 TangentCount = clone.TangentCount;
+                ColorCount = clone.ColorCount;
                 //UVs = new List<Vector3>(clone.UVs);
                 //Tangents = new List<Vector4>(clone.Tangents);
                 Bitangent = clone.Bitangent;
-                Colors = new List<VertexColor>(clone.Colors);
+                //Colors = new List<VertexColor>(clone.Colors);
                 UsesBoneIndices = clone.UsesBoneIndices;
                 UsesBoneWeights = clone.UsesBoneWeights;
 
@@ -181,7 +210,7 @@ namespace SoulsFormats
             {
                 //uvQueue = new Queue<Vector3>(UVs);
                 //tangentQueue = new Queue<Vector4>(Tangents);
-                colorQueue = new Queue<VertexColor>(Colors);
+                //colorQueue = new Queue<VertexColor>(Colors);
             }
 
             /// <summary>
@@ -214,7 +243,9 @@ namespace SoulsFormats
                             // Sit in a corner and cry
                         }
                         else
+                        {
                             throw new NotImplementedException($"Read not implemented for {member.Type} {member.Semantic}.");
+                        }
                     }
                     else if (member.Semantic == LayoutSemantic.BoneWeights)
                     {
@@ -239,7 +270,9 @@ namespace SoulsFormats
                                 BoneWeights[i] = br.ReadInt16() / 32767f;
                         }
                         else
+                        {
                             throw new NotImplementedException($"Read not implemented for {member.Type} {member.Semantic}.");
+                        }
 
                         UsesBoneWeights = true;
                     }
@@ -261,8 +294,10 @@ namespace SoulsFormats
                                 BoneIndices[i] = br.ReadByte();
                         }
                         else
+                        {
                             throw new NotImplementedException($"Read not implemented for {member.Type} {member.Semantic}.");
-                            
+                        }
+
                         UsesBoneIndices = true;
                     }
                     else if (member.Semantic == LayoutSemantic.Normal)
@@ -321,7 +356,9 @@ namespace SoulsFormats
                             NormalW = br.ReadByte();
                         }
                         else
+                        {
                             throw new NotImplementedException($"Read not implemented for {member.Type} {member.Semantic}.");
+                        }
                     }
                     else if (member.Semantic == LayoutSemantic.UV)
                     {
@@ -370,7 +407,9 @@ namespace SoulsFormats
                             br.AssertInt16(0);
                         }
                         else
+                        {
                             throw new NotImplementedException($"Read not implemented for {member.Type} {member.Semantic}.");
+                        }
                     }
                     else if (member.Semantic == LayoutSemantic.Tangent)
                     {
@@ -405,7 +444,9 @@ namespace SoulsFormats
                             AddTangent(ReadByteNormXYZW(br));
                         }
                         else
+                        {
                             throw new NotImplementedException($"Read not implemented for {member.Type} {member.Semantic}.");
+                        }
 
                     }
                     else if (member.Semantic == LayoutSemantic.Bitangent)
@@ -427,33 +468,39 @@ namespace SoulsFormats
                             Bitangent = ReadByteNormXYZW(br);
                         }
                         else
+                        {
                             throw new NotImplementedException($"Read not implemented for {member.Type} {member.Semantic}.");
+                        }
                     }
                     else if (member.Semantic == LayoutSemantic.VertexColor)
                     {
                         if (member.Type == LayoutType.Float4)
                         {
                             //Colors.Add(VertexColor.ReadFloatRGBA(br));
-                            VertexColor.ReadFloatRGBA(br);
+                            AddColor(VertexColor.ReadFloatRGBA(br));
                         }
                         else if (member.Type == LayoutType.Byte4A)
                         {
                             // Definitely RGBA in DeS
                             //Colors.Add(VertexColor.ReadByteRGBA(br));
-                            VertexColor.ReadByteRGBA(br);
+                            AddColor(VertexColor.ReadByteRGBA(br));
                         }
                         else if (member.Type == LayoutType.Byte4C)
                         {
                             // Definitely RGBA in DS1
                             //Colors.Add(VertexColor.ReadByteRGBA(br));
-                            VertexColor.ReadByteRGBA(br);
+                            AddColor(VertexColor.ReadByteRGBA(br));
                         }
                         else
+                        {
                             throw new NotImplementedException($"Read not implemented for {member.Type} {member.Semantic}.");
+                        }
 
                     }
                     else
+                    {
                         throw new NotImplementedException($"Read not implemented for {member.Type} {member.Semantic}.");
+                    }
                 }
             }
 
