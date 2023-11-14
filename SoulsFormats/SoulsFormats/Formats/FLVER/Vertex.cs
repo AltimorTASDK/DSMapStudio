@@ -116,10 +116,10 @@ namespace SoulsFormats
                 {
                     throw new Exception("Increase Tangent count");
                 }
-                Tangents[UVCount * 4] = tangent.X;
-                Tangents[UVCount * 4 + 1] = tangent.Y;
-                Tangents[UVCount * 4 + 2] = tangent.Z;
-                Tangents[UVCount * 4 + 3] = tangent.W;
+                Tangents[TangentCount * 4] = tangent.X;
+                Tangents[TangentCount * 4 + 1] = tangent.Y;
+                Tangents[TangentCount * 4 + 2] = tangent.Z;
+                Tangents[TangentCount * 4 + 3] = tangent.W;
                 TangentCount++;
             }
 
